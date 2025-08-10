@@ -10,9 +10,10 @@ import { BodyProfileModule } from './modules/body-profile/body-profile.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { EquipmentModule } from './modules/equipment/equipment.module';
 import { WorkoutCategoriesModule } from './modules/workout-categories/workout-categories.module';
+import { ExerciseModule } from './modules/exercise/exercise.module';
 
 @Module({
-  imports: [DatabaseModule, LocalStorageModule, AuthModule, AccountModule, UsersModule, BodyProfileModule, TagsModule, EquipmentModule, WorkoutCategoriesModule],
+  imports: [DatabaseModule, LocalStorageModule, AuthModule, AccountModule, UsersModule, BodyProfileModule, TagsModule, EquipmentModule, WorkoutCategoriesModule, ExerciseModule],
   providers: [
     {
       provide: APP_GUARD,

@@ -8,10 +8,10 @@ export const exercisesToTags = pgTable(
     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
     exerciseID: integer('exercise_id')
       .notNull()
-      .references(() => exercises.id),
+      .references(() => exercises.id, { onDelete: 'cascade' }),
     tagID: integer('tag_id')
       .notNull()
-      .references(() => tags.id)
+      .references(() => tags.id, { onDelete: 'cascade' })
   },
   (table) => [
     primaryKey({
