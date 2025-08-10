@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 import { CommonService } from '@common/services/common.service';
 import { users } from '@schema/users';
 import { and, eq, exists, sql } from 'drizzle-orm';
