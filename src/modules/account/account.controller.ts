@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { UpdateCustomizationDto } from './dto/update-customization.dto';
 
 @Controller('account')
 export class AccountController {
@@ -14,5 +15,10 @@ export class AccountController {
   @Patch()
   async updateAccount(@Body() dto: UpdateAccountDto) {
     return this.accountService.updateAccount(dto);
+  }
+
+  @Patch('customization')
+  async updateCustomization(@Body() dto: UpdateCustomizationDto) {
+    return this.accountService.updateCustomization(dto);
   }
 }

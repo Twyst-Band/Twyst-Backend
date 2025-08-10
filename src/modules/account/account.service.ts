@@ -5,6 +5,8 @@ import { users } from '@schema/users';
 import { eq } from 'drizzle-orm';
 import { throwConflictException } from '@common/exceptions/conflict.exception';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { UpdateCustomizationDto } from './dto/update-customization.dto';
+import { sql } from 'drizzle-orm';
 
 @Injectable()
 export class AccountService extends CommonService {
@@ -47,5 +49,14 @@ export class AccountService extends CommonService {
       
       throw e;
     }
+  }
+
+  async updateCustomization(dto: UpdateCustomizationDto) {
+    const [updated] = await this.db
+      .update(users)
+      .set({ customization: dto })
+      .where(eq(users.id, this.userID))
+      .returning({ customization: users.customization });
+    return { customization: updated.customization };
   }
 }

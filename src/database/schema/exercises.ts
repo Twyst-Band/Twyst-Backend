@@ -1,5 +1,5 @@
 import { integer, pgEnum, pgTable, text } from 'drizzle-orm/pg-core';
-import { categories } from '@schema/categories';
+import { workoutCategories } from '@schema/workout-categories';
 import { users } from '@schema/users';
 
 export const exerciseAccessEnum = pgEnum('exercise_type', ['private', 'public', '']);
@@ -11,7 +11,7 @@ export const exercises = pgTable('exercises', {
   difficulty: integer('difficulty').notNull(),
   categoryID: integer('category_id')
     .notNull()
-    .references(() => categories.id),
+    .references(() => workoutCategories.id),
   ownerID: integer('owner_id').references(() => users.id),
   ref: text('ref').notNull()
 });

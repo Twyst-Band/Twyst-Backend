@@ -3,7 +3,8 @@ import {
   pgTable,
   integer,
   text,
-  boolean
+  boolean,
+  jsonb
 } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -15,5 +16,6 @@ export const users = pgTable('users', {
   userName: text('username').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   followersCount: integer('followers_count').notNull().default(0),
-  followsCount: integer('follows_count').notNull().default(0)
+  followsCount: integer('follows_count').notNull().default(0),
+  customization: jsonb('customization').default(null)
 });

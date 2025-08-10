@@ -83,6 +83,7 @@ export class UsersService extends CommonService {
         .select({
           id: users.id,
           userName: users.userName,
+          customization: users.customization,
           followersCount: users.followersCount,
           followsCount: users.followsCount,
           iFollow: rel.iFollow,
@@ -95,6 +96,8 @@ export class UsersService extends CommonService {
     if (!user) throwNotFound('User not found');
     return user;
   }
+
+  // customization updates moved to account module
 
   async getFollowers(targetUserId: number) {
     // users who follow targetUserId
