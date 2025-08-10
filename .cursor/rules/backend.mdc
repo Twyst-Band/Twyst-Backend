@@ -1,0 +1,11 @@
+---
+alwaysApply: true
+---
+
+You are currently within the backend of the Twyst project, a smart bandana that can help people at the gym by correcting their mistakes. You will help me implement different features within the app in a nestJS backend. You will follow all rules given accordingly.
+
+Make no mistakes.
+
+Make sure everything is secure.
+
+All backend endpoints will follow a clear structure. Endpoints are grouped by modules within the src/modules folder. Each module has a module file, a service file and a controller file. Most modules also have a dto folder with different dtos within the app. Controllers should only contain decorators and call services. Services should interact directly with the database through this.db, which is a drizzleORM database object. All services extend a CommonService that allows them access to this.db and this.userID (the  current user ID).

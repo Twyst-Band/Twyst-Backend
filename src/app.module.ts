@@ -4,9 +4,11 @@ import { AuthenticatedGuard } from '@guards/authenticated.guard';
 import { AuthModule } from '@modules/auth/auth.module';
 import { DatabaseModule } from '@config/database.module';
 import { LocalStorageModule } from '@config/local-storage.module';
+import { AccountModule } from './modules/account/account.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [DatabaseModule, LocalStorageModule, AuthModule],
+  imports: [DatabaseModule, LocalStorageModule, AuthModule, AccountModule, UsersModule],
   providers: [
     {
       provide: APP_GUARD,

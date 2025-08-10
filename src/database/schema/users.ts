@@ -2,7 +2,8 @@ import {
   pgEnum,
   pgTable,
   integer,
-  text
+  text,
+  boolean
 } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -11,5 +12,8 @@ export const users = pgTable('users', {
   password: text('password_hash').notNull(),
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
-  userName: text('username').notNull().unique()
+  userName: text('username').notNull().unique(),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  followersCount: integer('followers_count').notNull().default(0),
+  followsCount: integer('follows_count').notNull().default(0)
 });
