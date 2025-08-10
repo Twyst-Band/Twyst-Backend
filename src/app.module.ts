@@ -7,9 +7,12 @@ import { LocalStorageModule } from '@config/local-storage.module';
 import { AccountModule } from './modules/account/account.module';
 import { UsersModule } from './modules/users/users.module';
 import { BodyProfileModule } from './modules/body-profile/body-profile.module';
+import { TagsModule } from './modules/tags/tags.module';
+import { EquipmentModule } from './modules/equipment/equipment.module';
+import { WorkoutCategoriesModule } from './modules/workout-categories/workout-categories.module';
 
 @Module({
-  imports: [DatabaseModule, LocalStorageModule, AuthModule, AccountModule, UsersModule, BodyProfileModule],
+  imports: [DatabaseModule, LocalStorageModule, AuthModule, AccountModule, UsersModule, BodyProfileModule, TagsModule, EquipmentModule, WorkoutCategoriesModule],
   providers: [
     {
       provide: APP_GUARD,
