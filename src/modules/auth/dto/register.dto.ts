@@ -21,7 +21,7 @@ export class RegisterDto {
   @IsString()
   @Length(3, 40)
   @Validate(IsUsernameValid)
-  username: string;
+  userName: string;
 
   @ApiProperty({
     description: 'First name of the user',

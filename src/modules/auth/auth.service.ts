@@ -17,6 +17,7 @@ import { ResetPasswordDto } from '@modules/auth/dto/reset-password.dto';
 import envConfig from '../../../env.config';
 import { emailVerificationTokens } from '@schema/email-verification-tokens';
 import { RequestEmailVerificationDto } from '@modules/auth/dto/request-email-verification.dto';
+import { RequestEmailChangeDto } from '@modules/auth/dto/request-email-change.dto';
 
 @Injectable()
 export class AuthService extends CommonService {
@@ -62,7 +63,7 @@ export class AuthService extends CommonService {
         password: await EncryptionUtils.hashPassword(registerDto.password),
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
-        userName: registerDto.username,
+        userName: registerDto.userName,
         emailVerified: !envConfig.VERIFY_EMAILS
       });
 
@@ -187,5 +188,18 @@ export class AuthService extends CommonService {
         userAgent: req?.headers['user-agent']
       }
     );
+  }
+
+  async requestEmailChange(requestEmailChangeDto: RequestEmailChangeDto) {
+    if (envConfig.VERIFY_EMAILS) {
+      await this.requestEmailVerification({
+        email: requestEmailChangeDto.email
+      });
+    } else {
+      await this.db
+        .update(users)
+        .set({ email: requestEmailChangeDto.email })
+        .where(eq(users.id, this.userID));
+    }
   }
 }
