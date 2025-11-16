@@ -4,6 +4,10 @@ export function random() {
   return sql`RANDOM()`;
 }
 
+export function now() {
+  return sql`NOW()`;
+}
+
 export function increment(column: AnyColumn, value: number) {
   return sql`${column} + ${value}`;
 }

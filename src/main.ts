@@ -6,8 +6,8 @@ import envConfig from '../env.config';
 
 function initSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
-    .setTitle('Twyst API')
-    .setDescription('The API endpoints and descriptions of Twyst API')
+    .setTitle('API')
+    .setDescription('The API endpoints and descriptions')
     .setVersion('1.0')
     .build();
 
