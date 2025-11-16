@@ -4,11 +4,16 @@ import {
   HttpCode,
   Post,
   Req,
-  UseGuards,
-  Get,
-  Query
+  UseGuards
 } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags
+} from '@nestjs/swagger';
 import { LocalAuthGuard } from './guards/local.guard';
 import { Public } from '@common/decorators/public.decorator';
 import { LoginDto } from './dto/login.dto';
@@ -56,7 +61,10 @@ export class AuthController {
       }
     }
   })
-  @ApiCreatedResponse({ description: 'Account created. If email verification is enabled, an email will be sent.' })
+  @ApiCreatedResponse({
+    description:
+      'Account created. If email verification is enabled, an email will be sent.'
+  })
   @ApiBadRequestResponse({ description: 'Validation error' })
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
@@ -66,7 +74,11 @@ export class AuthController {
   @Public()
   @ApiOperation({ summary: 'Request a password reset email' })
   @ApiBody({ schema: { example: { email: 'user@example.com' } } })
-  @ApiOkResponse({ description: 'Always returns ok even if email is not found to prevent enumeration', schema: { example: { ok: true } } })
+  @ApiOkResponse({
+    description:
+      'Always returns ok even if email is not found to prevent enumeration',
+    schema: { example: { ok: true } }
+  })
   async requestPasswordReset(
     @Body() body: RequestPasswordResetDto,
     @Req() req: Request
@@ -77,20 +89,17 @@ export class AuthController {
   @Post('reset-password')
   @Public()
   @ApiOperation({ summary: 'Reset password using a valid reset token' })
-  @ApiBody({ schema: { example: { token: 'uuid-token', newPassword: 'StrongP@ssw0rd!' } } })
-  @ApiOkResponse({ description: 'Password updated', schema: { example: { ok: true } } })
-  @ApiBadRequestResponse({ description: 'Token invalid/expired or validation error' })
+  @ApiBody({
+    schema: { example: { token: 'uuid-token', newPassword: 'StrongP@ssw0rd!' } }
+  })
+  @ApiOkResponse({
+    description: 'Password updated',
+    schema: { example: { ok: true } }
+  })
+  @ApiBadRequestResponse({
+    description: 'Token invalid/expired or validation error'
+  })
   async resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body);
-  }
-
-  @Get('verify-email')
-  @Public()
-  @ApiOperation({ summary: 'Verify email using token sent to email' })
-  @ApiQuery({ name: 'token', example: 'uuid-token' })
-  @ApiOkResponse({ description: 'Email verified', schema: { example: { ok: true } } })
-  @ApiBadRequestResponse({ description: 'Token invalid/expired' })
-  async verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
   }
 }

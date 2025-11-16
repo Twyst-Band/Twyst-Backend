@@ -5,7 +5,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import envConfig from '../../../env.config';
-import { MailingModule } from 'src/core/mailing/mailing.module';
+import { MailingModule } from 'src/mailing/mailing.module';
 
 @Module({
   imports: [

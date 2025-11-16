@@ -1,21 +1,17 @@
-import {
-  Injectable,
-  InternalServerErrorException
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CommonService } from '@common/services/common.service';
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
-import { BcryptUtils } from '@common/utils/bcrypt.utils';
+import { EncryptionUtils } from '@common/utils/encryption.utils';
 import { firstRow } from '@common/utils/drizzle.utils';
 import { users } from '@schema/users';
 import { throwUnauthorizedException } from '@common/exceptions/unauthorized.exception';
 import { RegisterDto } from '@modules/auth/dto/register.dto';
 import { throwConflictException } from '@common/exceptions/conflict.exception';
-import { MailingService } from 'src/core/mailing/mailing.service';
+import { MailingService } from 'src/mailing/mailing.service';
 import { Request } from 'express';
 import { RequestPasswordResetDto } from '@modules/auth/dto/request-password-reset.dto';
 import { passwordResetTokens } from '@schema/password-reset-tokens';
-import { and, gt } from 'drizzle-orm';
 import { throwNotFound } from '@common/exceptions/not-found.exception';
 import { ResetPasswordDto } from '@modules/auth/dto/reset-password.dto';
 import { throwBadRequestException } from '@common/exceptions/bad-request.exception';
@@ -51,25 +47,26 @@ export class AuthService extends CommonService {
 
     if (
       user &&
-      (await BcryptUtils.comparePasswords(password, user.password!))
+      (await EncryptionUtils.comparePasswords(password, user.password!))
     ) {
       return {
         token: this.jwtService.sign({
-          userID: user.id,
+          userID: user.id
         })
       };
     }
 
     throwUnauthorizedException('Incorrect email or password');
   }
+
   async register(registerDto: RegisterDto) {
     try {
       await this.db.insert(users).values({
         email: registerDto.email,
-        password: await BcryptUtils.hashPassword(registerDto.password),
+        password: await EncryptionUtils.hashPassword(registerDto.password),
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
-        userName: registerDto.username,
+        userName: registerDto.username
       });
       if (envConfig.VERIFY_EMAILS) {
         await this.requestEmailVerification({ email: registerDto.email });
@@ -85,7 +82,11 @@ export class AuthService extends CommonService {
   async requestPasswordReset(body: RequestPasswordResetDto, req?: Request) {
     const user = await firstRow(
       this.db
-        .select({ id: users.id, email: users.email, firstName: users.firstName })
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName
+        })
         .from(users)
         .where(eq(users.email, body.email))
         .limit(1)
@@ -125,7 +126,11 @@ export class AuthService extends CommonService {
   async resetPassword(body: ResetPasswordDto) {
     const tokenRow = await firstRow(
       this.db
-        .select({ token: passwordResetTokens.token, userID: passwordResetTokens.userID, expiresAt: passwordResetTokens.expiresAt })
+        .select({
+          token: passwordResetTokens.token,
+          userID: passwordResetTokens.userID,
+          expiresAt: passwordResetTokens.expiresAt
+        })
         .from(passwordResetTokens)
         .where(eq(passwordResetTokens.token, body.token))
         .limit(1)
@@ -138,25 +143,36 @@ export class AuthService extends CommonService {
     const now = new Date();
     if (tokenRow.expiresAt && now > tokenRow.expiresAt) {
       // delete expired token
-      await this.db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, body.token));
+      await this.db
+        .delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, body.token));
       throwBadRequestException('Token expired');
     }
 
     await this.db
       .update(users)
-      .set({ password: await BcryptUtils.hashPassword(body.newPassword) })
+      .set({ password: await EncryptionUtils.hashPassword(body.newPassword) })
       .where(eq(users.id, tokenRow.userID));
 
     // invalidate all tokens for user
-    await this.db.delete(passwordResetTokens).where(eq(passwordResetTokens.userID, tokenRow.userID));
+    await this.db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.userID, tokenRow.userID));
 
     return { ok: true };
   }
 
-  async requestEmailVerification(body: RequestEmailVerificationDto, req?: Request) {
+  async requestEmailVerification(
+    body: RequestEmailVerificationDto,
+    req?: Request
+  ) {
     const user = await firstRow(
       this.db
-        .select({ id: users.id, email: users.email, firstName: users.firstName })
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName
+        })
         .from(users)
         .where(eq(users.email, body.email))
         .limit(1)
@@ -185,31 +201,6 @@ export class AuthService extends CommonService {
         userAgent: req?.headers['user-agent']
       }
     );
-
-    return { ok: true };
-  }
-
-  async verifyEmail(token: string) {
-    const tokenRow = await firstRow(
-      this.db
-        .select({ token: emailVerificationTokens.token, userID: emailVerificationTokens.userID, expiresAt: emailVerificationTokens.expiresAt })
-        .from(emailVerificationTokens)
-        .where(eq(emailVerificationTokens.token, token))
-        .limit(1)
-    );
-
-    if (!tokenRow) {
-      throwNotFound('Invalid or expired token');
-    }
-
-    const now = new Date();
-    if (tokenRow.expiresAt && now > tokenRow.expiresAt) {
-      await this.db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.token, token));
-      throwBadRequestException('Token expired');
-    }
-
-    await this.db.update(users).set({ emailVerified: true }).where(eq(users.id, tokenRow.userID));
-    await this.db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userID, tokenRow.userID));
 
     return { ok: true };
   }

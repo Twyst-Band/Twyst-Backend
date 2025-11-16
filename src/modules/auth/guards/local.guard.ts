@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class LocalAuthGuard extends AuthGuard('local') {
-  handleRequest(err, user, _info) {
+  handleRequest(err: any, user: any, _info: any) {
     if (err && user !== false) {
       throw err;
     }

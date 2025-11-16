@@ -10,6 +10,6 @@ export class IsUsernameValid implements ValidatorConstraintInterface {
   }
 
   defaultMessage() {
-    return 'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character';
+    return 'Username can only contain uppercase and lowercase letters, digits, underscores and periods';
   }
 }

@@ -15,7 +15,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     this.cls.set('userID', payload.userID);
-    this.cls.set('role', payload.role);
 
     return true;
   }

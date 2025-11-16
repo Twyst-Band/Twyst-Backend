@@ -4,5 +4,3 @@ export class RequestPasswordResetDto {
   @IsEmail()
   email: string;
 }
-
-

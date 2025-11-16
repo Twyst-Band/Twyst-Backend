@@ -1,10 +1,10 @@
 import { compare, genSalt, hash } from 'bcrypt';
 
-export class BcryptUtils {
-  private static salt_rounds: number = 10;
+export class EncryptionUtils {
+  private static saltRounds: number = 10;
 
   static async hashPassword(password: string): Promise<string> {
-    const salt = await genSalt(this.salt_rounds);
+    const salt = await genSalt(this.saltRounds);
 
     return await hash(password, salt);
   }

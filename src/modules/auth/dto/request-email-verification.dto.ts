@@ -4,5 +4,3 @@ export class RequestEmailVerificationDto {
   @IsEmail()
   email: string;
 }
-
-
