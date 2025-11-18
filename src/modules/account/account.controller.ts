@@ -15,8 +15,8 @@ export class AccountController {
 
   constructor(private readonly accountService: AccountService) {
     // Log the DTO schema on controller initialization
-    console.log('\n🔎 FindAccountsDto Schema:');
-    this.introspectionService.printSummary(FindAccountsDto);
+    // console.log('\n🔎 FindAccountsDto Schema:');
+    // this.introspectionService.printSummary(FindAccountsDto);
   }
 
   @Get()
@@ -29,29 +29,7 @@ export class AccountController {
   async searchAccounts(
     @PaginatedQuery(FindAccountsDto) queryInstructions: PaginatedQueryResult
   ) {
-    console.log('\n=== Paginated Query Instructions ===');
-    console.log('Filters:', queryInstructions.filters);
-    console.log('Sorting:', queryInstructions.sorting);
-    console.log('Pagination Type:', queryInstructions.paginationType);
-    console.log('Limit:', queryInstructions.limit);
-    console.log('Page:', queryInstructions.page);
-    console.log('Cursor:', queryInstructions.cursor);
-    console.log('====================================\n');
-
-    const result = await this.accountService.searchAccounts(queryInstructions);
-
-    console.log('\n=== Paginated Response ===');
-    console.log('Data count:', result.data.length);
-    if ('page' in result) {
-      console.log('Page:', result.page);
-      console.log('Limit:', result.limit);
-    }
-    if ('nextCursor' in result) {
-      console.log('Next Cursor:', result.nextCursor);
-    }
-    console.log('==========================\n');
-
-    return result;
+    return await this.accountService.searchAccounts(queryInstructions);
   }
 
   @Patch()
