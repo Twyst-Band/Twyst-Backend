@@ -32,10 +32,34 @@ export class QueryParserService {
     const paginationOptions: PaginationOptions =
       Reflect.getMetadata(PAGINATION_METADATA, prototype) || {};
 
-    // Determine pagination type
-    const paginationType: PaginationType = queryParams.cursor
-      ? 'cursor'
-      : 'offset';
+    // Determine pagination type based on configuration and query params
+    const allowedType = paginationOptions.paginationType ?? 'both';
+    let paginationType: PaginationType;
+
+    if (allowedType === 'offset') {
+      // Only offset allowed
+      paginationType = 'offset';
+      
+      // Validate cursor is not being used
+      if (queryParams.cursor) {
+        throwBadRequestException(
+          'Cursor-based pagination is not enabled for this endpoint. Use "page" parameter instead.'
+        );
+      }
+    } else if (allowedType === 'cursor') {
+      // Only cursor allowed
+      paginationType = 'cursor';
+      
+      // Validate page is not being used
+      if (queryParams.page) {
+        throwBadRequestException(
+          'Offset-based pagination is not enabled for this endpoint. Remove "page" parameter to use cursor pagination.'
+        );
+      }
+    } else {
+      // Both allowed - use 'page' parameter presence to determine type
+      paginationType = queryParams.page ? 'offset' : 'cursor';
+    }
 
     // Parse filters
     const filters = this.parseFilters(prototype, queryParams);

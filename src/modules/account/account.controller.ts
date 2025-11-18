@@ -29,17 +29,29 @@ export class AccountController {
   async searchAccounts(
     @PaginatedQuery(FindAccountsDto) queryInstructions: PaginatedQueryResult
   ) {
-    console.log('=== Paginated Query Result ===');
-    console.log(
-      queryInstructions.filters.map((el) => ({
-        propertyKey: el.propertyKey,
-        operator: el.operator,
-        value: el.value
-      }))
-    );
-    console.log(queryInstructions.limit);
-    console.log(queryInstructions.sorting);
-    console.log('==============================');
+    console.log('\n=== Paginated Query Instructions ===');
+    console.log('Filters:', queryInstructions.filters);
+    console.log('Sorting:', queryInstructions.sorting);
+    console.log('Pagination Type:', queryInstructions.paginationType);
+    console.log('Limit:', queryInstructions.limit);
+    console.log('Page:', queryInstructions.page);
+    console.log('Cursor:', queryInstructions.cursor);
+    console.log('====================================\n');
+
+    const result = await this.accountService.searchAccounts(queryInstructions);
+
+    console.log('\n=== Paginated Response ===');
+    console.log('Data count:', result.data.length);
+    if ('page' in result) {
+      console.log('Page:', result.page);
+      console.log('Limit:', result.limit);
+    }
+    if ('nextCursor' in result) {
+      console.log('Next Cursor:', result.nextCursor);
+    }
+    console.log('==========================\n');
+
+    return result;
   }
 
   @Patch()

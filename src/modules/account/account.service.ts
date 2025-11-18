@@ -5,9 +5,19 @@ import { eq } from 'drizzle-orm';
 import { throwConflictException } from '@common/exceptions/conflict.exception';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { firstRow } from '@common/utils/drizzle.utils';
+import {
+  PaginatedQueryResult,
+  PaginationService,
+  OffsetPaginatedResponse,
+  CursorPaginatedResponse
+} from '@common/pagination';
 
 @Injectable()
 export class AccountService extends CommonService {
+  constructor(private readonly paginationService: PaginationService) {
+    super();
+  }
+
   async getCurrentAccount() {
     return this.query.users.findFirst({
       where: eq(users.id, this.userID),
@@ -19,6 +29,23 @@ export class AccountService extends CommonService {
         userName: true
       }
     });
+  }
+
+  async searchAccounts(
+    queryInstructions: PaginatedQueryResult
+  ): Promise<OffsetPaginatedResponse<any> | CursorPaginatedResponse<any>> {
+    const baseQuery = this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        userName: users.userName,
+        emailVerified: users.emailVerified
+      })
+      .from(users);
+
+    return await this.paginationService.execute(baseQuery, queryInstructions);
   }
 
   async updateAccount(updateAccountDto: UpdateAccountDto) {

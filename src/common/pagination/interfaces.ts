@@ -10,6 +10,8 @@ export interface PaginationOptions {
   allowCustomLimit?: boolean; // If the user can override limit
   allowMultipleSort?: boolean; // Allow multiple columns in sortBy
   maxLimit?: number; // Maximum allowed limit for queries
+  cursorIdField?: any; // Drizzle column used for cursor uniqueness (e.g., users.id)
+  paginationType?: 'offset' | 'cursor' | 'both'; // Which pagination types are allowed (default: 'both')
 }
 
 /**
@@ -90,5 +92,22 @@ export interface PaginatedQueryResult {
   cursor?: string; // For cursor-based pagination
   paginationType: PaginationType;
   paginationOptions: PaginationOptions;
+}
+
+/**
+ * Response for offset-based pagination
+ */
+export interface OffsetPaginatedResponse<T> {
+  data: T[];
+  page: number;
+  limit: number;
+}
+
+/**
+ * Response for cursor-based pagination
+ */
+export interface CursorPaginatedResponse<T> {
+  data: T[];
+  nextCursor: string | null;
 }
 

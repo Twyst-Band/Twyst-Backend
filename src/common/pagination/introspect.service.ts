@@ -117,6 +117,8 @@ export class IntrospectionService {
 
     // Pagination options
     console.log('📄 Pagination Options:');
+    let allowedType = metadata.paginationOptions.paginationType ?? 'both';
+    console.log(`  Pagination Type: ${allowedType}`);
     console.log(`  Default Limit: ${metadata.paginationOptions.limit || 10}`);
     console.log(`  Max Limit: ${metadata.paginationOptions.maxLimit || 100}`);
     console.log(
@@ -169,10 +171,38 @@ export class IntrospectionService {
     // Example queries
     console.log('\n🔗 Example Queries:');
     
-    // Basic pagination
-    console.log('\n  Pagination:');
-    console.log('    Offset-based: ?page=1&limit=20');
-    console.log('    Cursor-based: ?cursor=xyz&limit=20');
+    allowedType = metadata.paginationOptions.paginationType ?? 'both';
+    
+    // Basic pagination based on allowed type
+    if (allowedType === 'offset' || allowedType === 'both') {
+      console.log('\n  Offset-based Pagination:');
+      console.log('    Page 1: ?page=1&limit=20');
+      console.log('    Page 2: ?page=2&limit=20');
+      console.log('    Response: { data: [...], page: 1, limit: 20 }');
+    }
+    
+    if (allowedType === 'cursor' || allowedType === 'both') {
+      console.log('\n  Cursor-based Pagination:');
+      console.log('    Step 1 - First page (no cursor):');
+      console.log('      Request:  ?limit=20');
+      console.log('      Response: { data: [...], nextCursor: "eyJpZCI6MjB9" }');
+      console.log('');
+      console.log('    Step 2 - Next page (use nextCursor from previous response):');
+      console.log('      Request:  ?cursor=eyJpZCI6MjB9&limit=20');
+      console.log('      Response: { data: [...], nextCursor: "eyJpZCI6NDB9" }');
+      console.log('');
+      console.log('    Step 3 - Continue until nextCursor is null (last page):');
+      console.log('      Request:  ?cursor=eyJpZCI6NDB9&limit=20');
+      console.log('      Response: { data: [...], nextCursor: null }');
+      console.log('');
+      console.log('    Note: Cursor contains encoded sort values for consistent pagination');
+    }
+    
+    if (allowedType === 'both') {
+      console.log('\n  Choosing Pagination Type:');
+      console.log('    - Include "page" param → Uses offset pagination');
+      console.log('    - Omit "page" param → Uses cursor pagination');
+    }
     
     // Sorting examples
     if (metadata.sortableFields.length > 0) {
@@ -203,8 +233,7 @@ export class IntrospectionService {
       }
     }
     
-    // Combined example
-    console.log('\n  Combined (All features):');
+    // Combined examples
     const filterExamples: string[] = [];
     const sortExamples: string[] = [];
     
@@ -229,15 +258,28 @@ export class IntrospectionService {
         sortExamples.push('sortOrder=DESC');
       }
     }
-    
-    const allParams = [
-      'page=1',
-      'limit=20',
-      ...filterExamples,
-      ...sortExamples
-    ];
-    
-    console.log(`    ?${allParams.join('&')}`);
+
+    if (allowedType === 'offset' || allowedType === 'both') {
+      console.log('\n  Combined Example (Offset + Filters + Sort):');
+      const allParams = [
+        'page=1',
+        'limit=20',
+        ...filterExamples,
+        ...sortExamples
+      ];
+      console.log(`    ?${allParams.join('&')}`);
+    }
+
+    if (allowedType === 'cursor' || allowedType === 'both') {
+      console.log('\n  Combined Example (Cursor + Filters + Sort):');
+      const cursorParams = [
+        'limit=20',
+        ...filterExamples,
+        ...sortExamples
+      ];
+      console.log(`    First page:  ?${cursorParams.join('&')}`);
+      console.log(`    Next pages:  ?cursor=<nextCursor>&${cursorParams.join('&')}`);
+    }
     
     console.log('\n============================\n');
   }

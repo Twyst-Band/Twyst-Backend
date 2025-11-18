@@ -9,6 +9,7 @@ import {
 } from '@common/pagination';
 
 @Pagination({
+  paginationType: 'both', // 'offset' | 'cursor' | 'both'
   limit: 10,
   defaultSort: [
     { field: users.id, order: 'ASC' },
@@ -17,7 +18,8 @@ import {
   allowCustomSort: true,
   allowCustomLimit: true,
   allowMultipleSort: false,
-  maxLimit: 100
+  maxLimit: 100,
+  cursorIdField: users.id // Required when paginationType is 'cursor' or 'both'
 })
 export class FindAccountsDto extends BasePaginatedDto {
   @Prop(users.id)

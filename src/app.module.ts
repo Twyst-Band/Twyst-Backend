@@ -5,9 +5,16 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticatedGuard } from '@modules/auth/guards/authenticated.guard';
 import { AccountModule } from '@modules/account/account.module';
+import { PaginationModule } from '@common/pagination';
 
 @Module({
-  imports: [DatabaseModule, LocalStorageModule, AuthModule, AccountModule],
+  imports: [
+    DatabaseModule,
+    LocalStorageModule,
+    PaginationModule,
+    AuthModule,
+    AccountModule
+  ],
   providers: [
     {
       provide: APP_GUARD,
