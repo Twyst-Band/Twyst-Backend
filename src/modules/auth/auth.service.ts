@@ -16,8 +16,8 @@ import { throwNotFound } from '@common/exceptions/not-found.exception';
 import { ResetPasswordDto } from '@modules/auth/dto/reset-password.dto';
 import envConfig from '../../../env.config';
 import { emailVerificationTokens } from '@schema/email-verification-tokens';
-import { RequestEmailVerificationDto } from '@modules/auth/dto/request-email-verification.dto';
 import { RequestEmailChangeDto } from '@modules/auth/dto/request-email-change.dto';
+import { ChangeEmailDto } from '@modules/auth/dto/change-email.dto';
 
 @Injectable()
 export class AuthService extends CommonService {
@@ -56,20 +56,55 @@ export class AuthService extends CommonService {
     throwUnauthorizedException('Incorrect email or password');
   }
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto, req?: Request) {
     try {
-      await this.db.insert(users).values({
-        email: registerDto.email,
-        password: await EncryptionUtils.hashPassword(registerDto.password),
-        firstName: registerDto.firstName,
-        lastName: registerDto.lastName,
-        userName: registerDto.userName,
-        emailVerified: !envConfig.VERIFY_EMAILS
-      });
+      const user = await firstRow(
+        this.db
+          .insert(users)
+          .values({
+            email: registerDto.email,
+            password: await EncryptionUtils.hashPassword(registerDto.password),
+            firstName: registerDto.firstName,
+            lastName: registerDto.lastName,
+            userName: registerDto.userName,
+            emailVerified: !envConfig.VERIFY_EMAILS
+          })
+          .returning({
+            id: users.id
+          })
+      );
 
-      if (envConfig.VERIFY_EMAILS) {
-        await this.requestEmailVerification({ email: registerDto.email });
+      if (!envConfig.VERIFY_EMAILS) {
+        return;
       }
+
+      const token = await firstRow(
+        this.db
+          .insert(emailVerificationTokens)
+          .values({
+            email: registerDto.email,
+            userID: user!.id
+          })
+          .returning({ token: emailVerificationTokens.token })
+      );
+
+      const verificationUrl = `${envConfig.FRONTEND_URL}/verify-email?token=${token}`;
+
+      await this.mailingService.sendEmail(
+        registerDto.email,
+        'Verify your email',
+        'verify-email',
+        {
+          userName: registerDto.userName,
+          email: registerDto.email,
+          verificationUrl,
+          expirationTime: 60 * 24,
+          currentYear: new Date().getFullYear(),
+          requestTime: new Date().toISOString(),
+          ipAddress: req?.ip,
+          userAgent: req?.headers['user-agent']
+        }
+      );
     } catch (e) {
       if (e.code === '23505') {
         const match = e.detail.match(/\((.*?)\)=/);
@@ -151,23 +186,22 @@ export class AuthService extends CommonService {
       .where(eq(passwordResetTokens.userID, token.userID));
   }
 
-  async requestEmailVerification(
-    body: RequestEmailVerificationDto,
-    req?: Request
-  ) {
+  async requestEmailVerification(userID: number, req?: Request) {
     const user = await this.query.users.findFirst({
-      where: eq(users.email, body.email),
-      columns: { id: true, email: true, userName: true }
+      where: eq(users.id, userID)
     });
 
     if (!user) {
-      throwNotFound('User with this email not found');
+      throwNotFound('User not found');
     }
 
     const token = await firstRow(
       this.db
         .insert(emailVerificationTokens)
-        .values({ userID: user.id })
+        .values({
+          email: user.email,
+          userID: user.id
+        })
         .returning({ token: emailVerificationTokens.token })
     );
 
@@ -190,16 +224,66 @@ export class AuthService extends CommonService {
     );
   }
 
-  async requestEmailChange(requestEmailChangeDto: RequestEmailChangeDto) {
+  async requestEmailChange(
+    requestEmailChangeDto: RequestEmailChangeDto,
+    req?: Request
+  ) {
     if (envConfig.VERIFY_EMAILS) {
-      await this.requestEmailVerification({
-        email: requestEmailChangeDto.email
+      const token = await firstRow(
+        this.db
+          .insert(emailVerificationTokens)
+          .values({
+            email: requestEmailChangeDto.email,
+            userID: this.userID
+          })
+          .returning({ token: emailVerificationTokens.token })
+      );
+
+      const verificationUrl = `${envConfig.FRONTEND_URL}/verify-email?token=${token}`;
+
+      const user = await this.query.users.findFirst({
+        where: eq(users.id, this.userID)
       });
+
+      await this.mailingService.sendEmail(
+        requestEmailChangeDto.email,
+        'Verify your email',
+        'verify-email',
+        {
+          userName: user!.userName,
+          email: requestEmailChangeDto.email,
+          verificationUrl,
+          expirationTime: 60 * 24,
+          currentYear: new Date().getFullYear(),
+          requestTime: new Date().toISOString(),
+          ipAddress: req?.ip,
+          userAgent: req?.headers['user-agent']
+        }
+      );
     } else {
       await this.db
         .update(users)
         .set({ email: requestEmailChangeDto.email })
         .where(eq(users.id, this.userID));
     }
+  }
+
+  async changeEmail(changeEmailDto: ChangeEmailDto) {
+    const token = await this.query.emailVerificationTokens.findFirst({
+      where: and(
+        eq(emailVerificationTokens.token, changeEmailDto.token),
+        gte(emailVerificationTokens.expiresAt, now())
+      ),
+      columns: { userID: true, email: true }
+    });
+
+    if (!token) {
+      throwNotFound('Invalid or expired token');
+    }
+
+    await this.db
+      .update(users)
+      .set({ emailVerified: true, email: token.email })
+      .where(eq(users.id, token.userID));
   }
 }

@@ -16,6 +16,7 @@ import { AuthService } from '@modules/auth/auth.service';
 import { RequestPasswordResetDto } from '@modules/auth/dto/request-password-reset.dto';
 import { ResetPasswordDto } from '@modules/auth/dto/reset-password.dto';
 import { RequestEmailChangeDto } from '@modules/auth/dto/request-email-change.dto';
+import { ChangeEmailDto } from '@modules/auth/dto/change-email.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -26,22 +27,19 @@ export class AuthController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @HttpCode(200)
-  async login(
-    @Body() _loginDto: LoginDto,
-    @Req() req: Request & { user: any }
-  ) {
+  login(@Body() _loginDto: LoginDto, @Req() req: Request & { user: any }) {
     return req.user;
   }
 
   @Post('register')
   @Public()
-  register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  register(@Body() registerDto: RegisterDto, @Req() req: Request) {
+    return this.authService.register(registerDto, req);
   }
 
   @Post('request-password-reset')
   @Public()
-  async requestPasswordReset(
+  requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
     @Req() req: Request
   ) {
@@ -50,14 +48,20 @@ export class AuthController {
 
   @Post('reset-password')
   @Public()
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Post('request-email-change')
-  async requestEmailChange(
-    @Body() requestEmailChangeDto: RequestEmailChangeDto
+  requestEmailChange(
+    @Body() requestEmailChangeDto: RequestEmailChangeDto,
+    @Req() req: Request
   ) {
-    return this.authService.requestEmailChange(requestEmailChangeDto);
+    return this.authService.requestEmailChange(requestEmailChangeDto, req);
+  }
+
+  @Post('change-email')
+  changeEmail(@Body() changeEmailDto: ChangeEmailDto) {
+    return this.authService.changeEmail(changeEmailDto);
   }
 }
