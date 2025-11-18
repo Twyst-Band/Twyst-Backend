@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "twyst-backend",
+      "name": "Backend",
       "dependencies": {
         "@knaadh/nestjs-drizzle-pg": "^1.2.0",
         "@nestjs-modules/mailer": "^2.0.2",
