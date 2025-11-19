@@ -5,7 +5,7 @@ import { PaginationOptions } from './interfaces';
 /**
  * @Pagination class decorator - defines default pagination and sorting behavior for a DTO
  * @param options - Pagination configuration options
- * 
+ *
  * @example
  * ```typescript
  * // Offset-only pagination
@@ -15,7 +15,7 @@ import { PaginationOptions } from './interfaces';
  *   maxLimit: 100
  * })
  * export class FindUsersDto extends BasePaginatedDto { }
- * 
+ *
  * // Cursor-only pagination
  * @Pagination({
  *   paginationType: 'cursor',
@@ -23,7 +23,7 @@ import { PaginationOptions } from './interfaces';
  *   limit: 20
  * })
  * export class FindPostsDto extends BasePaginatedDto { }
- * 
+ *
  * // Both types allowed (default)
  * @Pagination({
  *   paginationType: 'both', // optional, this is the default
@@ -33,7 +33,11 @@ import { PaginationOptions } from './interfaces';
  * export class FindAccountsDto extends BasePaginatedDto { }
  * ```
  */
-export function Pagination(options: PaginationOptions = {}): ClassDecorator {
+export function Pagination(
+  options: PaginationOptions = {
+    paginationType: 'offset'
+  }
+): ClassDecorator {
   return (target: Function) => {
     // Validate options
     if (options.limit && options.maxLimit && options.limit > options.maxLimit) {
@@ -70,7 +74,11 @@ export function Pagination(options: PaginationOptions = {}): ClassDecorator {
     }
 
     // If cursor pagination is allowed, cursorIdField should be provided
-    if ((paginationType === 'cursor' || paginationType === 'both') && !options.cursorIdField) {
+    if (
+      (options.paginationType === 'cursor' ||
+        options.paginationType === 'both') &&
+      !options.cursorIdField
+    ) {
       throw new Error(
         `@Pagination: cursorIdField is required when paginationType is '${paginationType}'`
       );
@@ -84,11 +92,13 @@ export function Pagination(options: PaginationOptions = {}): ClassDecorator {
       allowCustomLimit: options.allowCustomLimit ?? true,
       allowMultipleSort: options.allowMultipleSort ?? true,
       maxLimit: options.maxLimit ?? 100,
-      cursorIdField: options.cursorIdField,
-      paginationType: paginationType as 'offset' | 'cursor' | 'both'
+      cursorIdField:
+        options.paginationType === 'cursor' || options.paginationType === 'both'
+          ? options.cursorIdField
+          : undefined,
+      paginationType: options.paginationType
     };
 
     Reflect.defineMetadata(PAGINATION_METADATA, finalOptions, target.prototype);
   };
 }
-

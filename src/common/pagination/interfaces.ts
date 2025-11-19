@@ -1,18 +1,33 @@
-import { FilterOperator, SortOrder, PaginationType } from './constants';
+import { FilterOperator, PaginationType, SortOrder } from './constants';
 
 /**
  * Options for the @Pagination class decorator
  */
-export interface PaginationOptions {
+// Shared fields for all pagination modes
+export interface BasePaginationOptions {
   limit?: number; // Default page size
   defaultSort?: SortDefinition[]; // Default sort columns and order
   allowCustomSort?: boolean; // If the user can override defaultSort
   allowCustomLimit?: boolean; // If the user can override limit
   allowMultipleSort?: boolean; // Allow multiple columns in sortBy
   maxLimit?: number; // Maximum allowed limit for queries
-  cursorIdField?: any; // Drizzle column used for cursor uniqueness (e.g., users.id)
-  paginationType?: 'offset' | 'cursor' | 'both'; // Which pagination types are allowed (default: 'both')
 }
+
+// Case 1: Offset-only pagination → cursorIdField is not allowed
+export interface OffsetPaginationOptions extends BasePaginationOptions {
+  paginationType: 'offset'; // Default: offset mode
+}
+
+// Case 2: Cursor or Both → cursorIdField is mandatory
+export interface CursorPaginationOptions extends BasePaginationOptions {
+  paginationType: 'cursor' | 'both';
+  cursorIdField: any; // Required when cursor pagination is enabled
+}
+
+// Combined final type
+export type PaginationOptions =
+  | OffsetPaginationOptions
+  | CursorPaginationOptions;
 
 /**
  * Sort definition for defaultSort
@@ -110,4 +125,3 @@ export interface CursorPaginatedResponse<T> {
   data: T[];
   nextCursor: string | null;
 }
-
