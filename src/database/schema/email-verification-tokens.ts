@@ -11,3 +11,16 @@ export const emailVerificationTokens = pgTable('email_verification_tokens', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   expiresAt: timestamp('expires_at').notNull().default(sql`NOW() + INTERVAL '1 day'`)
 });
+
+export const emailVerificationTokensGeneralSelect = {
+  token: true,
+  userID: true,
+  email: true,
+  createdAt: true,
+  expiresAt: true
+};
+
+export const emailVerificationTokensDeleteReplace = {
+  statusField: null,
+  replaceValues: null
+};

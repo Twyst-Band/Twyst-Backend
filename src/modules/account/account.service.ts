@@ -6,10 +6,10 @@ import { throwConflictException } from '@common/exceptions/conflict.exception';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { firstRow } from '@common/utils/drizzle.utils';
 import {
-  PaginatedQueryResult,
-  PaginationService,
+  CursorPaginatedResponse,
   OffsetPaginatedResponse,
-  CursorPaginatedResponse
+  PaginatedQueryResult,
+  PaginationService
 } from '@common/pagination';
 
 @Injectable()
@@ -45,12 +45,12 @@ export class AccountService extends CommonService {
       })
       .from(users);
 
-    return await this.paginationService.execute(baseQuery, queryInstructions);
+    return this.paginationService.execute(baseQuery, queryInstructions);
   }
 
   async updateAccount(updateAccountDto: UpdateAccountDto) {
     try {
-      return await firstRow(
+      return firstRow(
         this.db
           .update(users)
           .set(updateAccountDto)

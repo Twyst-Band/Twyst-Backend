@@ -10,3 +10,15 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   expiresAt: timestamp('expires_at').notNull().default(sql`NOW() + INTERVAL '15 minutes'`)
 });
+
+export const passwordResetTokensGeneralSelect = {
+  token: true,
+  userID: true,
+  createdAt: true,
+  expiresAt: true
+};
+
+export const passwordResetTokensDeleteReplace = {
+  statusField: null,
+  replaceValues: null
+};

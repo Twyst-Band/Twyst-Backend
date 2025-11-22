@@ -14,9 +14,8 @@ export class AccountController {
   private readonly introspectionService = new IntrospectionService();
 
   constructor(private readonly accountService: AccountService) {
-    // Log the DTO schema on controller initialization
-    // console.log('\n🔎 FindAccountsDto Schema:');
-    // this.introspectionService.printSummary(FindAccountsDto);
+    console.log('\n🔎 FindAccountsDto Schema:');
+    this.introspectionService.printSummary(FindAccountsDto);
   }
 
   @Get()

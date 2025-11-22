@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "EndpointSchematic",
+  "title": "Endpoint Options Schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the resource"
+    },
+    "path": {
+      "type": "string",
+      "description": "The path to create the resource",
+      "default": "src/modules"
+    },
+    "skipImport": {
+      "type": "boolean",
+      "description": "Skip importing into app.module",
+      "default": false
+    },
+    "dryRun": {
+      "type": "boolean",
+      "description": "Run without making any changes",
+      "default": false
+    }
+  }
+}
+

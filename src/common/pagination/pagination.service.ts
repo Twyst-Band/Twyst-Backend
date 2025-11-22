@@ -40,7 +40,7 @@ export class PaginationService {
       );
     }
 
-    if (paginationType === 'cursor') {
+    if (paginationOptions.paginationType === 'cursor') {
       const cursorIdField = paginationOptions.cursorIdField;
       
       if (!cursorIdField) {

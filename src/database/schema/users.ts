@@ -9,3 +9,17 @@ export const users = pgTable('users', {
   userName: text('username').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false)
 });
+
+export const usersGeneralSelect = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  userName: true,
+  emailVerified: true
+};
+
+export const usersDeleteReplace = {
+  statusField: null,
+  replaceValues: null
+};

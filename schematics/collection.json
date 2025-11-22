@@ -1,0 +1,11 @@
+{
+  "$schema": "../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "endpoint": {
+      "description": "Generate a new endpoint with Drizzle ORM integration",
+      "factory": "../dist/schematics/endpoint/index#endpoint",
+      "schema": "./endpoint/schema.json"
+    }
+  }
+}
+

@@ -6,15 +6,19 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthenticatedGuard } from '@modules/auth/guards/authenticated.guard';
 import { AccountModule } from '@modules/account/account.module';
 import { PaginationModule } from '@common/pagination';
+import { TagsModule } from './modules/tags/tags.module';
+import { PostsModule } from './modules/posts/posts.module';
 
 @Module({
-  imports: [
+  imports: [import { PostModule } from '@modules/posts/posts.module';
     DatabaseModule,
     LocalStorageModule,
     PaginationModule,
     AuthModule,
-    AccountModule
-  ],
+    AccountModule,
+    TagsModule,
+    PostsModule,
+    PostModule],
   providers: [
     {
       provide: APP_GUARD,
