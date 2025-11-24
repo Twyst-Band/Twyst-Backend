@@ -1,6 +1,6 @@
 import { TableMetadata } from '../utils/schema-inspector';
 import { EndpointType } from '../endpoint/prompts';
-import { getClassName, getModuleName } from '../utils/string-utils';
+import { getClassName, getModuleName, getFileName } from '../utils/string-utils';
 
 export class ControllerGenerator {
   /**
@@ -84,25 +84,22 @@ ${methods.join('\n\n')}
     }
 
     imports.push(`import { ${Array.from(decorators).join(', ')} } from '@nestjs/common';`);
-    imports.push(`import { ${className}Service } from './${tableMetadata.tableName}.service';`);
+    const fileName = getFileName(tableMetadata.tableName);
+    imports.push(`import { ${className}Service } from './${fileName}.service';`);
 
-    // Add DTO imports
-    const dtoImports: string[] = [];
+    // Add DTO imports - directly from files (singular form)
+    const singularName = className.toLowerCase(); // className is already singular (Post, not Posts)
+    
     for (const endpoint of endpoints) {
       if (['create', 'createMany'].includes(endpoint.type)) {
-        dtoImports.push(`Create${className}Dto`);
+        imports.push(`import { Create${className}Dto } from './dto/create-${singularName}.dto';`);
       }
       if (['update', 'updateMany'].includes(endpoint.type)) {
-        dtoImports.push(`Update${className}Dto`);
+        imports.push(`import { Update${className}Dto } from './dto/update-${singularName}.dto';`);
       }
       if (endpoint.type === 'readMany') {
-        dtoImports.push(`Find${className}sDto`);
+        imports.push(`import { Find${className}sDto } from './dto/find-${singularName}s.dto';`);
       }
-    }
-
-    if (dtoImports.length > 0) {
-      const uniqueDtos = [...new Set(dtoImports)];
-      imports.push(`import { ${uniqueDtos.join(', ')} } from './dto';`);
     }
 
     // Add pagination imports for readMany
@@ -154,10 +151,11 @@ ${methods.join('\n\n')}
    */
   private generateCreateMethod(tableMetadata: TableMetadata, publicDecorator: string): string {
     const className = getClassName(tableMetadata.tableName);
+    const dtoParamName = `create${className}Dto`;
 
     return `${publicDecorator}  @Post()
-  async create(@Body() dto: Create${className}Dto) {
-    return await this.service.create(dto);
+  async create(@Body() ${dtoParamName}: Create${className}Dto) {
+    return this.service.create(${dtoParamName});
   }`;
   }
 
@@ -167,7 +165,7 @@ ${methods.join('\n\n')}
   private generateReadMethod(tableMetadata: TableMetadata, publicDecorator: string): string {
     return `${publicDecorator}  @Get(':id')
   async findOne(@Param('id') id: string) {
-    return await this.service.findOne(+id);
+    return this.service.findOne(+id);
   }`;
   }
 
@@ -179,7 +177,7 @@ ${methods.join('\n\n')}
 
     return `${publicDecorator}  @Get()
   async findAll(@PaginatedQuery(Find${className}sDto) queryInstructions: PaginatedQueryResult) {
-    return await this.service.findAll(queryInstructions);
+    return this.service.findAll(queryInstructions);
   }`;
   }
 
@@ -188,10 +186,11 @@ ${methods.join('\n\n')}
    */
   private generateUpdateMethod(tableMetadata: TableMetadata, publicDecorator: string): string {
     const className = getClassName(tableMetadata.tableName);
+    const dtoParamName = `update${className}Dto`;
 
     return `${publicDecorator}  @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: Update${className}Dto) {
-    return await this.service.update(+id, dto);
+  async update(@Param('id') id: string, @Body() ${dtoParamName}: Update${className}Dto) {
+    return this.service.update(+id, ${dtoParamName});
   }`;
   }
 
@@ -201,7 +200,7 @@ ${methods.join('\n\n')}
   private generateDeleteMethod(tableMetadata: TableMetadata, publicDecorator: string): string {
     return `${publicDecorator}  @Delete(':id')
   async delete(@Param('id') id: string) {
-    return await this.service.delete(+id);
+    return this.service.delete(+id);
   }`;
   }
 
@@ -210,10 +209,11 @@ ${methods.join('\n\n')}
    */
   private generateCreateManyMethod(tableMetadata: TableMetadata, publicDecorator: string): string {
     const className = getClassName(tableMetadata.tableName);
+    const dtoParamName = `create${className}Dtos`;
 
     return `${publicDecorator}  @Post('bulk')
-  async createMany(@Body() dtos: Create${className}Dto[]) {
-    return await this.service.createMany(dtos);
+  async createMany(@Body() ${dtoParamName}: Create${className}Dto[]) {
+    return this.service.createMany(${dtoParamName});
   }`;
   }
 
@@ -222,10 +222,11 @@ ${methods.join('\n\n')}
    */
   private generateUpdateManyMethod(tableMetadata: TableMetadata, publicDecorator: string): string {
     const className = getClassName(tableMetadata.tableName);
+    const dtoParamName = `update${className}Dto`;
 
     return `${publicDecorator}  @Patch('bulk')
-  async updateMany(@Body() body: { ids: number[]; dto: Update${className}Dto }) {
-    return await this.service.updateMany(body.ids, body.dto);
+  async updateMany(@Body() body: { ids: number[]; ${dtoParamName}: Update${className}Dto }) {
+    return this.service.updateMany(body.ids, body.${dtoParamName});
   }`;
   }
 
@@ -235,7 +236,7 @@ ${methods.join('\n\n')}
   private generateDeleteManyMethod(tableMetadata: TableMetadata, publicDecorator: string): string {
     return `${publicDecorator}  @Delete('bulk')
   async deleteMany(@Body() body: { ids: number[] }) {
-    return await this.service.deleteMany(body.ids);
+    return this.service.deleteMany(body.ids);
   }`;
   }
 }

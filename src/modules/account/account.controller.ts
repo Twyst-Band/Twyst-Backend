@@ -28,7 +28,7 @@ export class AccountController {
   async searchAccounts(
     @PaginatedQuery(FindAccountsDto) queryInstructions: PaginatedQueryResult
   ) {
-    return await this.accountService.searchAccounts(queryInstructions);
+    return this.accountService.searchAccounts(queryInstructions);
   }
 
   @Patch()

@@ -13,12 +13,13 @@ import { strings } from '@angular-devkit/core';
 import * as path from 'path';
 import { EndpointOptions } from './schema';
 import { SchemaInspector, TableMetadata } from '../utils/schema-inspector';
-import { EndpointPrompts, EndpointConfig } from './prompts';
+import { EndpointPrompts, EndpointConfig, EndpointType } from './prompts';
 import { DtoGenerator } from '../generators/dto-generator';
 import { ServiceGenerator } from '../generators/service-generator';
 import { ControllerGenerator } from '../generators/controller-generator';
 import { ModuleGenerator } from '../generators/module-generator';
-import { getClassName, getModuleName } from '../utils/string-utils';
+import { getClassName, getModuleName, getFolderName, getFileName } from '../utils/string-utils';
+import { ImportManager } from '../utils/import-manager';
 
 export function endpoint(options: EndpointOptions): Rule {
   return async (tree: Tree, context: SchematicContext) => {
@@ -38,7 +39,7 @@ export function endpoint(options: EndpointOptions): Rule {
 
       // Generate files
       context.logger.info(`✨ Generating endpoint for table: ${config.tableName}`);
-      await generateEndpoint(tree, context, config, options);
+      await generateEndpoint(tree, context, config, options, inspector);
 
       context.logger.info('✅ Endpoint generation completed successfully!');
       return tree;
@@ -53,12 +54,15 @@ async function generateEndpoint(
   tree: Tree,
   context: SchematicContext,
   config: EndpointConfig,
-  options: EndpointOptions
+  options: EndpointOptions,
+  inspector: SchemaInspector
 ): Promise<void> {
   const className = getClassName(config.tableName);
-  const moduleName = getModuleName(config.tableName);
+  const moduleName = getModuleName(config.tableName); // For route path (plural)
+  const folderName = getFolderName(config.tableName); // For folder name (singular)
+  const fileName = getFileName(config.tableName); // For file names (singular)
   const modulePath = options.path || 'src/modules';
-  const fullPath = path.join(modulePath, moduleName);
+  const fullPath = path.join(modulePath, folderName);
 
   // Check if module directory exists, create if not
   if (!tree.exists(fullPath)) {
@@ -67,7 +71,7 @@ async function generateEndpoint(
 
   // Initialize generators
   const dtoGenerator = new DtoGenerator();
-  const serviceGenerator = new ServiceGenerator();
+  const serviceGenerator = new ServiceGenerator(inspector);
   const controllerGenerator = new ControllerGenerator();
   const moduleGenerator = new ModuleGenerator();
 
@@ -85,34 +89,42 @@ async function generateEndpoint(
 
   // Generate Service
   context.logger.info('⚙️  Generating service...');
-  const serviceContent = serviceGenerator.generateService(config.tableMetadata, [endpointInfo]);
-  const servicePath = path.join(fullPath, `${config.tableName}.service.ts`);
+  const servicePath = path.join(fullPath, `${fileName}.service.ts`);
   
   if (tree.exists(servicePath)) {
-    // TODO: Merge with existing service
-    context.logger.warn(`Service already exists at ${servicePath}. Skipping...`);
+    // Merge with existing service
+    context.logger.info(`Service exists. Adding new method...`);
+    const existingContent = tree.read(servicePath)?.toString('utf-8') || '';
+    const newServiceContent = serviceGenerator.generateService(config.tableMetadata, [endpointInfo]);
+    const mergedContent = mergeServiceMethod(existingContent, newServiceContent, config.endpointType, config.endpointType);
+    tree.overwrite(servicePath, mergedContent);
   } else {
+    const serviceContent = serviceGenerator.generateService(config.tableMetadata, [endpointInfo]);
     tree.create(servicePath, serviceContent);
   }
 
   // Generate Controller
   context.logger.info('🎮 Generating controller...');
-  const controllerContent = controllerGenerator.generateController(config.tableMetadata, [
-    endpointInfo
-  ]);
-  const controllerPath = path.join(fullPath, `${config.tableName}.controller.ts`);
+  const controllerPath = path.join(fullPath, `${fileName}.controller.ts`);
   
   if (tree.exists(controllerPath)) {
-    // TODO: Merge with existing controller
-    context.logger.warn(`Controller already exists at ${controllerPath}. Skipping...`);
+    // Merge with existing controller
+    context.logger.info(`Controller exists. Adding new method...`);
+    const existingContent = tree.read(controllerPath)?.toString('utf-8') || '';
+    const newMethod = controllerGenerator.generateController(config.tableMetadata, [endpointInfo]);
+    const mergedContent = mergeControllerMethod(existingContent, newMethod, config.endpointType);
+    tree.overwrite(controllerPath, mergedContent);
   } else {
+    const controllerContent = controllerGenerator.generateController(config.tableMetadata, [
+      endpointInfo
+    ]);
     tree.create(controllerPath, controllerContent);
   }
 
   // Generate Module
   context.logger.info('📦 Generating module...');
-  const moduleContent = moduleGenerator.generateModule(config.tableMetadata, [endpointInfo]);
-  const moduleFilePath = path.join(fullPath, `${config.tableName}.module.ts`);
+  const moduleContent = moduleGenerator.generateModule(config.tableMetadata, [endpointInfo], folderName, fileName);
+  const moduleFilePath = path.join(fullPath, `${fileName}.module.ts`);
   
   if (tree.exists(moduleFilePath)) {
     context.logger.warn(`Module already exists at ${moduleFilePath}. Skipping...`);
@@ -120,18 +132,10 @@ async function generateEndpoint(
     tree.create(moduleFilePath, moduleContent);
   }
 
-  // Generate DTO index
-  const dtoIndexContent = moduleGenerator.generateDtoIndex(config.tableMetadata, [endpointInfo]);
-  const dtoIndexPath = path.join(fullPath, 'dto', 'index.ts');
-  
-  if (!tree.exists(dtoIndexPath)) {
-    tree.create(dtoIndexPath, dtoIndexContent);
-  }
-
   // Update app.module.ts
   if (!options.skipImport) {
     context.logger.info('🔧 Updating app.module.ts...');
-    updateAppModule(tree, context, config.tableMetadata, moduleGenerator);
+    updateAppModule(tree, context, config.tableMetadata, moduleGenerator, folderName, fileName);
   }
 }
 
@@ -149,13 +153,14 @@ async function generateDtos(
   }
 
   const className = getClassName(config.tableName);
+  const singularName = className.toLowerCase(); // className is already singular
 
   // Generate based on endpoint type
   switch (config.endpointType) {
     case 'create':
     case 'createMany':
       const createDto = dtoGenerator.generateCreateDto(config.tableMetadata, config.relations);
-      const createDtoPath = path.join(dtoPath, `create-${config.tableName}.dto.ts`);
+      const createDtoPath = path.join(dtoPath, `create-${singularName}.dto.ts`);
       if (!tree.exists(createDtoPath)) {
         tree.create(createDtoPath, createDto);
       }
@@ -164,7 +169,7 @@ async function generateDtos(
     case 'update':
     case 'updateMany':
       const updateDto = dtoGenerator.generateUpdateDto(config.tableMetadata);
-      const updateDtoPath = path.join(dtoPath, `update-${config.tableName}.dto.ts`);
+      const updateDtoPath = path.join(dtoPath, `update-${singularName}.dto.ts`);
       if (!tree.exists(updateDtoPath)) {
         tree.create(updateDtoPath, updateDto);
       }
@@ -172,7 +177,7 @@ async function generateDtos(
 
     case 'read':
       const readDto = dtoGenerator.generateReadDto(config.tableMetadata);
-      const readDtoPath = path.join(dtoPath, `find-${config.tableName}.dto.ts`);
+      const readDtoPath = path.join(dtoPath, `find-${singularName}.dto.ts`);
       if (!tree.exists(readDtoPath)) {
         tree.create(readDtoPath, readDto);
       }
@@ -183,7 +188,7 @@ async function generateDtos(
         config.tableMetadata,
         config.paginationType
       );
-      const readManyDtoPath = path.join(dtoPath, `find-${config.tableName}s.dto.ts`);
+      const readManyDtoPath = path.join(dtoPath, `find-${singularName}s.dto.ts`);
       if (!tree.exists(readManyDtoPath)) {
         tree.create(readManyDtoPath, readManyDto);
       }
@@ -195,7 +200,9 @@ function updateAppModule(
   tree: Tree,
   context: SchematicContext,
   tableMetadata: TableMetadata,
-  moduleGenerator: ModuleGenerator
+  moduleGenerator: ModuleGenerator,
+  folderName: string,
+  fileName: string
 ): void {
   const appModulePath = 'src/app.module.ts';
 
@@ -210,7 +217,7 @@ function updateAppModule(
     return;
   }
 
-  const { importStatement, moduleName } = moduleGenerator.generateAppModuleUpdate(tableMetadata);
+  const { importStatement, moduleName } = moduleGenerator.generateAppModuleUpdate(tableMetadata, folderName, fileName);
 
   // Check if module is already imported
   if (content.includes(moduleName)) {
@@ -248,3 +255,78 @@ function updateAppModule(
   context.logger.info(`✅ Added ${moduleName} to app.module.ts`);
 }
 
+function mergeServiceMethod(
+  existingContent: string,
+  newServiceContent: string,
+  endpointType: EndpointType,
+  newEndpointType: EndpointType
+): string {
+  // Extract the new method from the generated service
+  const methodMatch = newServiceContent.match(/async\s+\w+\([^)]*\)[^{]*{[\s\S]*?^\s\s}/m);
+  
+  if (!methodMatch) {
+    return existingContent;
+  }
+
+  const newMethod = methodMatch[0];
+  
+  // Merge imports using ts-morph (automatically handles duplicates and unused imports)
+  let updatedContent = ImportManager.mergeImports(existingContent, newServiceContent);
+  
+  // Check if we need to update constructor for PaginationService
+  if (newEndpointType === 'readMany' && !updatedContent.includes('PaginationService')) {
+    // Check if constructor needs PaginationService
+    const constructorMatch = updatedContent.match(/constructor\([^)]*\)/);
+    if (constructorMatch && !constructorMatch[0].includes('PaginationService')) {
+      // Update constructor to include PaginationService
+      const newConstructor = constructorMatch[0].replace(
+        /constructor\(([^)]*)\)/,
+        'constructor(private readonly paginationService: PaginationService$1)'
+      );
+      updatedContent = updatedContent.replace(constructorMatch[0], newConstructor);
+    } else if (!constructorMatch) {
+      // No constructor, add one
+      const classMatch = updatedContent.match(/export\s+class\s+\w+\s+extends\s+CommonService\s*{/);
+      if (classMatch) {
+        const classEndIndex = updatedContent.indexOf('{', updatedContent.indexOf(classMatch[0])) + 1;
+        const beforeClassBody = updatedContent.substring(0, classEndIndex);
+        const afterClassBody = updatedContent.substring(classEndIndex);
+        updatedContent = beforeClassBody + '\n  constructor(private readonly paginationService: PaginationService) {\n    super();\n  }\n' + afterClassBody;
+      }
+    }
+  }
+  
+  // Find the last method in the existing service (before the closing brace)
+  const lastBraceIndex = updatedContent.lastIndexOf('}');
+  const beforeLastBrace = updatedContent.substring(0, lastBraceIndex);
+  const afterLastBrace = updatedContent.substring(lastBraceIndex);
+
+  // Insert the new method before the closing brace
+  return `${beforeLastBrace}\n\n  ${newMethod}\n${afterLastBrace}`;
+}
+
+function mergeControllerMethod(
+  existingContent: string,
+  newControllerContent: string,
+  endpointType: EndpointType
+): string {
+  // Extract the new method from the generated controller
+  const methodMatch = newControllerContent.match(/(@Public\(\))?\s*@(Get|Post|Patch|Delete)[\s\S]*?async\s+\w+\([^)]*\)[^{]*{[\s\S]*?^\s\s}/m);
+  
+  if (!methodMatch) {
+    return existingContent;
+  }
+
+  const newMethod = methodMatch[0];
+  
+  // Merge imports using ts-morph (automatically handles duplicates and unused imports)
+  let updatedContent = ImportManager.mergeImports(existingContent, newControllerContent);
+  
+  // Find the last method in the existing controller (before the closing brace)
+  const lastBraceIndex = updatedContent.lastIndexOf('}');
+  const beforeLastBrace = updatedContent.substring(0, lastBraceIndex);
+  const afterLastBrace = updatedContent.substring(lastBraceIndex);
+
+  // Insert the new method before the closing brace
+  return `${beforeLastBrace}\n\n  ${newMethod}\n${afterLastBrace}`;
+}

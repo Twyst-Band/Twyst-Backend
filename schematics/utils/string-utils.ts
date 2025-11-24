@@ -69,9 +69,23 @@ export function getVariableName(tableName: string): string {
 }
 
 /**
- * Get module name from table name
+ * Get module name from table name (for route path - plural)
  */
 export function getModuleName(tableName: string): string {
   return pluralize(toKebabCase(singularize(tableName)));
+}
+
+/**
+ * Get folder name from table name (singular)
+ */
+export function getFolderName(tableName: string): string {
+  return toKebabCase(singularize(tableName));
+}
+
+/**
+ * Get file name from table name (singular)
+ */
+export function getFileName(tableName: string): string {
+  return toCamelCase(singularize(tableName));
 }
 

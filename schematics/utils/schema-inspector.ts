@@ -58,8 +58,9 @@ export interface TableMetadata {
 }
 
 export class SchemaInspector {
-  private schemaPath: string;
+  private readonly schemaPath: string;
   private schema: any;
+  private cachedTables: Map<string, TableMetadata> | null = null;
 
   constructor(projectRoot: string) {
     this.schemaPath = path.join(projectRoot, 'src', 'database', 'schema');
@@ -69,25 +70,32 @@ export class SchemaInspector {
    * Load and introspect all tables from the schema
    */
   async introspectSchema(): Promise<Map<string, TableMetadata>> {
+    // Return cached result if available
+    if (this.cachedTables) {
+      return this.cachedTables;
+    }
+
     const schemaIndexPath = path.join(this.schemaPath, 'index');
-    
+
     // Dynamically import the schema
     this.schema = await import(schemaIndexPath);
-    
+
     const tables = new Map<string, TableMetadata>();
-    
+
     // Find all table exports (they follow the pattern of pgTable objects)
     for (const [exportName, exportValue] of Object.entries(this.schema)) {
       if (this.isTable(exportValue)) {
         const tableName = this.getTableName(exportValue);
         const metadata = await this.extractTableMetadata(tableName, exportName);
-        
+
         if (metadata) {
           tables.set(tableName, metadata);
         }
       }
     }
     
+    // Cache the results
+    this.cachedTables = tables;
     return tables;
   }
 
@@ -99,30 +107,32 @@ export class SchemaInspector {
     exportName: string
   ): Promise<TableMetadata | null> {
     const table = this.schema[exportName];
-    
+
     // Get general select
     const generalSelectName = `${exportName}GeneralSelect`;
     const generalSelect = this.schema[generalSelectName];
-    
+
     if (!generalSelect) {
-      console.warn(`Warning: ${generalSelectName} not found for table ${tableName}`);
+      console.warn(
+        `Warning: ${generalSelectName} not found for table ${tableName}`
+      );
       return null;
     }
-    
+
     // Get delete replace config
     const deleteReplaceName = `${exportName}DeleteReplace`;
     const deleteReplace = this.schema[deleteReplaceName] || {
       statusField: null,
       replaceValues: null
     };
-    
+
     // Extract columns
     const columns = this.extractColumns(table);
-    
+
     // Extract relations
     const relationsName = `${exportName}Relations`;
     const relations = this.extractRelations(relationsName);
-    
+
     return {
       tableName,
       columns,
@@ -138,22 +148,22 @@ export class SchemaInspector {
    */
   private extractColumns(table: any): ColumnInfo[] {
     const columns: ColumnInfo[] = [];
-    
+
     if (!table || typeof table !== 'object') {
       return columns;
     }
-    
+
     // Access the columns from the Drizzle table object
     const columnsSymbol = Object.getOwnPropertySymbols(table).find(
       (sym) => sym.toString() === 'Symbol(drizzle:Columns)'
     );
-    
+
     if (!columnsSymbol) {
       return columns;
     }
-    
+
     const tableColumns = table[columnsSymbol];
-    
+
     for (const [columnName, column] of Object.entries(tableColumns as any)) {
       columns.push({
         name: columnName,
@@ -164,7 +174,7 @@ export class SchemaInspector {
         isUnique: this.isColumnUnique(column)
       });
     }
-    
+
     return columns;
   }
 
@@ -173,20 +183,20 @@ export class SchemaInspector {
    */
   private extractRelations(relationsName: string): RelationInfo[] {
     const relations: RelationInfo[] = [];
-    
+
     const relationsExport = this.schema[relationsName];
-    
+
     if (!relationsExport) {
       return relations;
     }
-    
+
     try {
       // Call the relations config to get the structure
       const relationsConfig = relationsExport.config({
         one: createOne(relationsExport.table),
         many: createMany(relationsExport.table)
       });
-      
+
       // Parse the relations from the config
       for (const [fieldName, relation] of Object.entries(relationsConfig)) {
         if (this.isOneRelation(relation)) {
@@ -207,7 +217,7 @@ export class SchemaInspector {
     } catch (error) {
       console.warn(`Could not extract relations for ${relationsName}:`, error);
     }
-    
+
     return relations;
   }
 
@@ -216,11 +226,11 @@ export class SchemaInspector {
    */
   private isTable(obj: any): boolean {
     if (!obj || typeof obj !== 'object') return false;
-    
+
     const drizzleTableSymbol = Object.getOwnPropertySymbols(obj).find(
       (sym) => sym.toString() === 'Symbol(drizzle:IsDrizzleTable)'
     );
-    
+
     return drizzleTableSymbol ? obj[drizzleTableSymbol] === true : false;
   }
 
@@ -228,7 +238,7 @@ export class SchemaInspector {
     const nameSymbol = Object.getOwnPropertySymbols(table).find(
       (sym) => sym.toString() === 'Symbol(drizzle:Name)'
     );
-    
+
     return nameSymbol ? table[nameSymbol] : 'unknown';
   }
 
@@ -237,13 +247,13 @@ export class SchemaInspector {
     if (column?.column?.dataType) {
       return column.column.dataType;
     }
-    
+
     // Fallback: try to determine from constructor
     const constructorName = column?.constructor?.name;
     if (constructorName) {
       return constructorName.replace(/^Pg/, '').toLowerCase();
     }
-    
+
     return 'unknown';
   }
 
@@ -280,6 +290,16 @@ export class SchemaInspector {
   }
 
   /**
+   * Get a specific table's metadata synchronously (requires introspectSchema to be called first)
+   */
+  getTableMetadataSync(tableName: string): TableMetadata | null {
+    if (!this.cachedTables) {
+      throw new Error('Schema not loaded. Call introspectSchema() first.');
+    }
+    return this.cachedTables.get(tableName) || null;
+  }
+
+  /**
    * List all available tables
    */
   async listTables(): Promise<string[]> {
@@ -287,4 +307,3 @@ export class SchemaInspector {
     return Array.from(allTables.keys());
   }
 }
-

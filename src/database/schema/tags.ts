@@ -7,7 +7,7 @@ export const tags = pgTable('tags', {
   name: text('name').notNull()
 });
 
-export const tagRelations = relations(tags, ({ many }) => ({
+export const tagsRelations = relations(tags, ({ many }) => ({
   tagsToPosts: many(tagsToPosts)
 }));
 

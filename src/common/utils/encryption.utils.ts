@@ -6,7 +6,7 @@ export class EncryptionUtils {
   static async hashPassword(password: string): Promise<string> {
     const salt = await genSalt(this.saltRounds);
 
-    return await hash(password, salt);
+    return hash(password, salt);
   }
 
   static async comparePasswords(

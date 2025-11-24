@@ -13,7 +13,7 @@ export abstract class CommonService {
 
   @Inject()
   private readonly clsService: ClsService<CustomClsStore>;
-
+  
   protected get userID(): number {
     return this.clsService.get('userID');
   }
