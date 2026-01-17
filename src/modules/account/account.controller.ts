@@ -2,21 +2,18 @@ import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { FindAccountsDto } from './dto/find-accounts.dto';
+import { Public } from '@common/decorators/public.decorator';
 import {
   IntrospectionService,
   PaginatedQuery,
   PaginatedQueryResult
-} from '@common/pagination';
-import { Public } from '@common/decorators/public.decorator';
+} from 'nest-drizzle-pagination';
 
 @Controller('account')
 export class AccountController {
   private readonly introspectionService = new IntrospectionService();
 
-  constructor(private readonly accountService: AccountService) {
-    console.log('\n🔎 FindAccountsDto Schema:');
-    this.introspectionService.printSummary(FindAccountsDto);
-  }
+  constructor(private readonly accountService: AccountService) {}
 
   @Get()
   async getCurrentAccount() {

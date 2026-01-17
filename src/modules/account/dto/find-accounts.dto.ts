@@ -1,12 +1,12 @@
 import { users } from '@schema/users';
 import {
-  BasePaginatedDto,
+  BasePaginationDto,
   Filter,
   Like,
   Pagination,
   Prop,
   Sortable
-} from '@common/pagination';
+} from 'nest-drizzle-pagination';
 
 @Pagination({
   paginationType: 'both',
@@ -21,7 +21,7 @@ import {
   maxLimit: 100,
   cursorIdField: users.id
 })
-export class FindAccountsDto extends BasePaginatedDto {
+export class FindAccountsDto extends BasePaginationDto {
   @Prop(users.id)
   @Filter('eq', 'gt', 'lt')
   @Sortable()

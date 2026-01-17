@@ -10,7 +10,7 @@ import {
   OffsetPaginatedResponse,
   PaginatedQueryResult,
   PaginationService
-} from '@common/pagination';
+} from 'nest-drizzle-pagination';
 
 @Injectable()
 export class AccountService extends CommonService {

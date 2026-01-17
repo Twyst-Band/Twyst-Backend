@@ -25,6 +25,7 @@
     "generate:endpoint": "npm run build:schematics && schematics ./schematics/collection.json:endpoint --debug=false"
   },
   "dependencies": {
+    "@denny-il/drizzle-pg-utils": "^0.4.0",
     "@knaadh/nestjs-drizzle-pg": "^1.2.0",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.0.1",
@@ -38,6 +39,7 @@
     "class-validator": "^0.14.2",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
+    "nest-drizzle-pagination": "1.0.1",
     "nestjs-cls": "^6.0.1",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

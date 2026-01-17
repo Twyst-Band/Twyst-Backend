@@ -5,20 +5,20 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticatedGuard } from '@modules/auth/guards/authenticated.guard';
 import { AccountModule } from '@modules/account/account.module';
-import { PaginationModule } from '@common/pagination';
-import { TagsModule } from './modules/tags/tags.module';
-import { PostsModule } from './modules/posts/posts.module';
+import { PostModule } from '@modules/post/post.module';
+import { TagsModule } from '@modules/tags/tags.module';
+import { PaginationModule } from 'nest-drizzle-pagination';
 
 @Module({
-  imports: [import { PostModule } from '@modules/posts/posts.module';
+  imports: [
     DatabaseModule,
     LocalStorageModule,
     PaginationModule,
     AuthModule,
     AccountModule,
     TagsModule,
-    PostsModule,
-    PostModule],
+    PostModule
+  ],
   providers: [
     {
       provide: APP_GUARD,

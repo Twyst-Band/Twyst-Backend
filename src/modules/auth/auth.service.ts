@@ -106,8 +106,9 @@ export class AuthService extends CommonService {
         }
       );
     } catch (e) {
-      if (e.code === '23505') {
-        const match = e.detail.match(/\((.*?)\)=/);
+      console.log(e)
+      if (e.cause.code === '23505') {
+        const match = e.cause.detail.match(/\((.*?)\)=/)[1];
 
         throwConflictException(`${match} already in use`);
       }

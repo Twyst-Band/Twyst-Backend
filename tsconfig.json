@@ -17,6 +17,10 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.hbs"
+    ],
     "paths": {
       "@common/*": [
         "src/common/*"
